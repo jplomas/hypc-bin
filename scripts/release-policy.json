@@ -1,0 +1,5 @@
+{
+  "comment": "Versions published before the hyperion release pipeline produced the artefact named below. New versions must not be added to either list.",
+  "noGithubRelease": ["0.0.1", "0.0.2", "0.1.0"],
+  "noAttestation": ["0.0.1", "0.0.2", "0.1.0", "0.2.0"]
+}
