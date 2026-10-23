@@ -1,0 +1,77 @@
+name: Verify binaries
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  list:
+    name: list.json is generated from the binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.x'
+      - run: npm ci --ignore-scripts --prefix scripts
+      # Hashes, the releases map and latestRelease must equal generate-list.mjs output exactly,
+      # and every binary must report the version in its file name.
+      - name: Verify list.json and embedded versions
+        run: node scripts/verify-list.mjs
+
+  releases:
+    name: Binaries match the hyperion GitHub releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22.x'
+      - run: npm ci --ignore-scripts --prefix scripts
+      # sha256 against the release's SHA256SUMS and `gh attestation verify` for every version
+      # newer than those grandfathered in scripts/release-policy.json.
+      - name: Cross-check with theQRL/hyperion releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-releases.mjs
+
+  immutable:
+    name: Existing binaries are never modified or removed
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Only additions to bin/*.js
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changes=$(git diff --name-status --no-renames "$BASE_SHA...$HEAD_SHA" -- 'bin/*.js')
+          printf '%s\n' "${changes:-no binary changes}"
+          if grep -vE '^A[[:space:]]' <<< "$changes" | grep -q .; then
+            echo "::error::Existing binaries are immutable. A bad release burns its version number; publish a new one instead."
+            exit 1
+          fi

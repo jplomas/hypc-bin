@@ -1,0 +1,17 @@
+{
+  "name": "hypc-bin-tools",
+  "private": true,
+  "description": "Generate and verify bin/list.json for binaries.theqrl.org",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "generate": "node generate-list.mjs",
+    "verify": "node verify-list.mjs",
+    "check-releases": "node check-releases.mjs"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0"
+  }
+}
