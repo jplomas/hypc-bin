@@ -18,7 +18,9 @@ CI (`.github/workflows/verify.yml`) enforces all three on every pull request and
 
 ## Adding a release
 
-Requires Node.js 22+ and the GitHub CLI (`gh`), signed in.
+Requires Node.js 22+ and the GitHub CLI (`gh`) 2.102.0 or later, signed in. Both scripts refuse an
+older `gh`: versions 2.51.0 to 2.101.0 accept an attestation from any workflow whose path begins with
+the pinned one (GHSA-wjmr-j3rp-mh2g).
 
 ```bash
 npm ci --ignore-scripts --prefix scripts
@@ -33,7 +35,7 @@ regenerated `bin/list.json`.
 ## Verifying a download yourself
 
 ```bash
-# releases after 0.2.0
+# releases after 0.2.0; needs gh 2.102.0 or later (GHSA-wjmr-j3rp-mh2g)
 gh attestation verify hypjson-v0.2.1+commit.<hash>.js --repo theQRL/hyperion \
   --signer-workflow theQRL/hyperion/.github/workflows/ci.yml
 ```

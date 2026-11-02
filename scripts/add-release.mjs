@@ -8,11 +8,12 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { binDir, buildList, serialize, listPath } from './lib.mjs';
+import { binDir, buildList, serialize, listPath, requireGh } from './lib.mjs';
 import { writeFileSync } from 'node:fs';
 
 const version = process.argv[2];
 if (!/^\d+\.\d+\.\d+$/.test(version || '')) { console.error('usage: node scripts/add-release.mjs <x.y.z>'); process.exit(2); }
+try { requireGh(); } catch (e) { console.error(e.message); process.exit(1); }
 const HYPERION = 'theQRL/hyperion';
 // The only workflow that signs hyperion release assets; an attestation from any other workflow in
 // the repository is rejected.

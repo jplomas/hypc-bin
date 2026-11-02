@@ -1,12 +1,12 @@
 // Cross-check every released binary against the theQRL/hyperion GitHub release that produced it:
 // sha256 must equal the hypjson.js line of the release's SHA256SUMS, and the build provenance
 // attestation must verify. Versions older than the release pipeline are listed in release-policy.json.
-// Needs the GitHub CLI (`gh`) with a token (GH_TOKEN in CI).
+// Needs the GitHub CLI (`gh`) 2.102.0 or later with a token (GH_TOKEN in CI).
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { buildList, binDir, policy } from './lib.mjs';
+import { buildList, binDir, policy, requireGh } from './lib.mjs';
 
 const HYPERION = 'theQRL/hyperion';
 // The only workflow that signs hyperion release assets; an attestation from any other workflow in
@@ -16,6 +16,7 @@ const { noGithubRelease, noAttestation } = policy();
 const gh = (args) => spawnSync('gh', args, { encoding: 'utf8' });
 let failed = false;
 const fail = (msg) => { console.error(`::error::${msg}`); failed = true; };
+try { requireGh(); } catch (e) { fail(e.message); process.exit(1); }
 
 const work = mkdtempSync(join(tmpdir(), 'hypc-bin-'));
 try {

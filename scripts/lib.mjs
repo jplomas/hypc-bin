@@ -79,3 +79,15 @@ export function embeddedVersion(file) {
 export function policy() {
   return JSON.parse(readFileSync(join(root, 'scripts', 'release-policy.json'), 'utf8'));
 }
+
+// GitHub CLI 2.51.0 to 2.101.0 match --signer-workflow as a prefix, so an attestation from another
+// workflow whose path begins with the pinned one passes (GHSA-wjmr-j3rp-mh2g).
+export const MIN_GH_VERSION = '2.102.0';
+
+export function requireGh() {
+  const r = spawnSync('gh', ['--version'], { encoding: 'utf8' });
+  const found = /^gh version (\d+\.\d+\.\d+)/.exec(r.stdout || '')?.[1];
+  if (!found || semverCompare(found, MIN_GH_VERSION) < 0) {
+    throw new Error(`gh attestation verify needs GitHub CLI ${MIN_GH_VERSION} or later, found ${found || 'none'}: older versions accept an attestation from any workflow whose path begins with the pinned one (GHSA-wjmr-j3rp-mh2g)`);
+  }
+}
