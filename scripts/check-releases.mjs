@@ -9,6 +9,9 @@ import { spawnSync } from 'node:child_process';
 import { buildList, binDir, policy } from './lib.mjs';
 
 const HYPERION = 'theQRL/hyperion';
+// The only workflow that signs hyperion release assets; an attestation from any other workflow in
+// the repository is rejected.
+const HYPERION_RELEASE_WORKFLOW = `${HYPERION}/.github/workflows/ci.yml`;
 const { noGithubRelease, noAttestation } = policy();
 const gh = (args) => spawnSync('gh', args, { encoding: 'utf8' });
 let failed = false;
@@ -29,7 +32,7 @@ try {
     if (expected !== entry.sha256) fail(`${version}: bin/${path} sha256 ${entry.sha256} != release SHA256SUMS ${expected}`);
     else console.log(`ok   ${version}: sha256 matches ${HYPERION} v${version} SHA256SUMS`);
     if (noAttestation.includes(version)) { console.log(`skip ${version}: released before build provenance (release-policy.json)`); continue; }
-    const att = gh(['attestation', 'verify', join(binDir, path), '--repo', HYPERION]);
+    const att = gh(['attestation', 'verify', join(binDir, path), '--repo', HYPERION, '--signer-workflow', HYPERION_RELEASE_WORKFLOW]);
     if (att.status !== 0) fail(`${version}: build provenance attestation does not verify: ${(att.stderr || att.stdout).trim()}`);
     else console.log(`ok   ${version}: build provenance attestation verifies`);
   }

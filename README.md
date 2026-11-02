@@ -33,7 +33,9 @@ regenerated `bin/list.json`.
 ## Verifying a download yourself
 
 ```bash
-gh attestation verify hypjson-v0.2.1+commit.<hash>.js --repo theQRL/hyperion   # releases after 0.2.0
+# releases after 0.2.0
+gh attestation verify hypjson-v0.2.1+commit.<hash>.js --repo theQRL/hyperion \
+  --signer-workflow theQRL/hyperion/.github/workflows/ci.yml
 ```
 
 or compare its sha256 with the `hypjson.js` line of the release's `SHA256SUMS` on

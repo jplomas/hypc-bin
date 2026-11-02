@@ -14,6 +14,9 @@ import { writeFileSync } from 'node:fs';
 const version = process.argv[2];
 if (!/^\d+\.\d+\.\d+$/.test(version || '')) { console.error('usage: node scripts/add-release.mjs <x.y.z>'); process.exit(2); }
 const HYPERION = 'theQRL/hyperion';
+// The only workflow that signs hyperion release assets; an attestation from any other workflow in
+// the repository is rejected.
+const HYPERION_RELEASE_WORKFLOW = `${HYPERION}/.github/workflows/ci.yml`;
 const run = (cmd, args) => { const r = spawnSync(cmd, args, { encoding: 'utf8' }); if (r.status !== 0) throw new Error(`${cmd} ${args.join(' ')}: ${(r.stderr || r.stdout).trim()}`); return r.stdout; };
 
 const work = mkdtempSync(join(tmpdir(), 'hypc-bin-add-'));
@@ -23,7 +26,7 @@ try {
   const actual = createHash('sha256').update(readFileSync(file)).digest('hex');
   const line = readFileSync(join(work, 'SHA256SUMS'), 'utf8').split('\n').find((l) => /\shypjson\.js$/.test(l));
   if (!line || line.split(/\s+/)[0] !== actual) throw new Error('hypjson.js does not match the release SHA256SUMS');
-  run('gh', ['attestation', 'verify', file, '--repo', HYPERION]);
+  run('gh', ['attestation', 'verify', file, '--repo', HYPERION, '--signer-workflow', HYPERION_RELEASE_WORKFLOW]);
   const reported = run(process.execPath, ['--input-type=commonjs', '-e', `process.stdout.write(require(${JSON.stringify(file)}).cwrap('hyperion_version','string',[])())`]).trim();
   const m = /^(\d+\.\d+\.\d+)\+(commit\.[0-9a-f]{8})\./.exec(reported);
   if (!m || m[1] !== version) throw new Error(`binary reports version ${reported}, expected ${version}+commit.*`);
