@@ -86,7 +86,8 @@ export const MIN_GH_VERSION = '2.102.0';
 
 export function requireGh() {
   const r = spawnSync('gh', ['--version'], { encoding: 'utf8' });
-  const found = /^gh version (\d+\.\d+\.\d+)/.exec(r.stdout || '')?.[1];
+  // Keep any pre-release suffix: semverCompare sorts 2.102.0-rc.1 before 2.102.0.
+  const found = /^gh version (\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/.exec(r.stdout || '')?.[1];
   if (!found || semverCompare(found, MIN_GH_VERSION) < 0) {
     throw new Error(`gh attestation verify needs GitHub CLI ${MIN_GH_VERSION} or later, found ${found || 'none'}: older versions accept an attestation from any workflow whose path begins with the pinned one (GHSA-wjmr-j3rp-mh2g)`);
   }
